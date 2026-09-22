@@ -1,11 +1,184 @@
-!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <h1></h1>
-</body>
-</html>
+import random
+import time
+
+class Jogador:
+    def __init__(self, nome, posicao, força, valor, time_atual="Livre"):
+        self.nome = nome
+        self.posicao = posicao
+        self.forca = força  # 1 a 99
+        self.valor = valor  # Em milhões
+        self.time_atual = time_atual
+
+    def __repr__(self):
+        return f"{self.nome} ({self.posicao}) - Força: {self.forca} | R$ {self.valor}M"
+
+
+class Time:
+    def __init__(self, nome, orcamento):
+        self.nome = nome
+        self.orcamento = orcamento
+        self.elenco = []
+
+    def forca_total(self):
+        if not self.elenco:
+            return 0
+        return sum(j.forca for j in self.elenco) // len(self.elenco)
+
+    def mostrar_elenco(self):
+        print(f"\n--- ELENCO: {self.nome} (Orçamento: R$ {self.orcamento}M) ---")
+        for i, j in enumerate(self.elenco, 1):
+            print(f"{i}. {j.nome} [{j.posicao}] - Força: {j.forca} | Valor: R$ {j.valor}M")
+
+
+class BrasfootCore:
+    def __init__(self):
+        self.meu_time = None
+        self.adversarios = []
+        self.mercado = []
+        self.rodada = 1
+
+    def inicializar_dados(self):
+        # Mercado de Transferências Inicial
+        self.mercado = [
+            Jogador("Vini Jr.", "ATA", 89, 120),
+            Jogador("Rodri", "MEI", 88, 90),
+            Jogador("Marquinhos", "DEF", 85, 50),
+            Jogador("Alisson", "GOL", 87, 45),
+            Jogador("Endrick", "ATA", 79, 35),
+            Jogador("Arrascaeta", "MEI", 82, 25),
+        ]
+
+        # Criando alguns times
+        t1 = Time("Flamengo", 100)
+        t1.elenco = [Jogador("Pedro", "ATA", 81, 20), Jogador("Gerson", "MEI", 80, 18)]
+
+        t2 = Time("Palmeiras", 95)
+        t2.elenco = [Jogador("Veiga", "MEI", 81, 22), Jogador("Gomez", "DEF", 82, 15)]
+
+        t3 = Time("São Paulo", 70)
+        t3.elenco = [Jogador("Calleri", "ATA", 79, 12), Jogador("Lucas M.", "MEI", 80, 10)]
+
+        self.adversarios = [t1, t2, t3]
+
+    def escolher_time(self):
+        print("=== BEM-VINDO AO SIMULADOR DE FUTEBOL ===")
+        nome_jogador_time = input("Digite o nome do seu clube: ")
+        self.meu_time = Time(nome_jogador_time, 80)
+        # Elenco inicial padrão
+        self.meu_time.elenco = [
+            Jogador("Goleiro Titular", "GOL", 70, 5),
+            Jogador("Zagueiro Central", "DEF", 68, 4),
+            Jogador("Meia Criativo", "MEI", 72, 6),
+            Jogador("Atacante Matador", "ATA", 71, 5),
+        ]
+
+    def simular_partida(self):
+        if not self.adversarios:
+            print("Não há adversários cadastrados.")
+            return
+
+        oponente = random.choice(self.adversarios)
+        print(f"\n--- RODADA {self.rodada}: {self.meu_time.nome} vs {oponente.nome} ---")
+        
+        # Cálculo de chances baseado na força média
+        f_meu = self.meu_time.forca_total()
+        f_adv = oponente.forca_total()
+
+        gols_meu = 0
+        gols_adv = 0
+
+        # Simulação dos 90 minutos
+        for minuto in range(1, 91, 15):
+            time.sleep(0.3)
+            # Chance de gol proporcional à força
+            if random.randint(1, 100) <= (f_meu / 2):
+                gols_meu += 1
+                print(f"⚽ GOOOOOOL DO {self.meu_time.nome}! (Minuto {minuto})")
+            if random.randint(1, 100) <= (f_adv / 2):
+                gols_adv += 1
+                print(f"⚽ GOOOOOOL DO {oponente.nome}! (Minuto {minuto})")
+
+        print(f"\nFIM DE JOGO! Placar Final: {self.meu_time.nome} {gols_meu} x {gols_adv} {oponente.nome}")
+        
+        # Premiação financeira básica
+        if gols_meu > gols_adv:
+            print("Vitória! Você ganhou R$ 5M de premiação.")
+            self.meu_time.orcamento += 5
+        elif gols_meu == gols_adv:
+            print("Empate! Você ganhou R$ 2M de premiação.")
+            self.meu_time.orcamento += 2
+        else:
+            print("Derrota! Sem premiação nesta rodada.")
+
+        self.rodada += 1
+
+    def mercado_transferencias(self):
+        while True:
+            print(f"\n=== MERCADO DE TRANSFERÊNCIAS (Orçamento: R$ {self.meu_time.orcamento}M) ===")
+            print("1. Comprar Jogador")
+            print("2. Vender Jogador")
+            print("3. Voltar ao Menu Principal")
+            opcao = input("Escolha uma opção: ")
+
+            if opcao == "1":
+                print("\nJogadores disponíveis:")
+                for i, j in enumerate(self.mercado, 1):
+                    print(f"{i}. {j}")
+                
+                escolha = input("\nDigite o número do jogador para comprar (ou 0 para cancelar): ")
+                if escolha.isdigit() and 0 < int(escolha) <= len(self.mercado):
+                    idx = int(escolha) - 1
+                    jogador = self.mercado[idx]
+                    
+                    if self.meu_time.orcamento >= jogador.valor:
+                        self.meu_time.orcamento -= jogador.valor
+                        self.meu_time.elenco.append(jogador)
+                        self.mercado.pop(idx)
+                        print(f"\n✅ {jogador.nome} foi contratado com sucesso!")
+                    else:
+                        print("\n❌ Orçamento insuficiente!")
+
+            elif opcao == "2":
+                self.meu_time.mostrar_elenco()
+                escolha = input("\nDigite o número do jogador para vender (ou 0 para cancelar): ")
+                if escolha.isdigit() and 0 < int(escolha) <= len(self.meu_time.elenco):
+                    idx = int(escolha) - 1
+                    jogador = self.meu_time.elenco.pop(idx)
+                    self.meu_time.orcamento += jogador.valor
+                    self.mercado.append(jogador)
+                    print(f"\n💰 {jogador.nome} foi vendido por R$ {jogador.valor}M!")
+
+            elif opcao == "3":
+                break
+
+    def menu_principal(self):
+        self.inicializar_dados()
+        self.escolher_time()
+
+        while True:
+            print(f"\n==========================================")
+            print(f"CLUBE: {self.meu_time.nome} | Força Média: {self.meu_time.forca_total()}")
+            print(f"Orçamento: R$ {self.meu_time.orcamento}M | Rodada: {self.rodada}")
+            print(f"==========================================")
+            print("1. Jogar Próxima Partida")
+            print("2. Ver Elenco")
+            print("3. Mercado de Transferências")
+            print("4. Sair do Jogo")
+            
+            opcao = input("Escolha uma opção: ")
+
+            if opcao == "1":
+                self.simular_partida()
+            elif opcao == "2":
+                self.meu_time.mostrar_elenco()
+            elif opcao == "3":
+                self.mercado_transferencias()
+            elif opcao == "4":
+                print("Obrigado por jogar!")
+                break
+
+
+# Executar o jogo
+if __name__ == "__main__":
+    jogo = BrasfootCore()
+    jogo.menu_principal()
