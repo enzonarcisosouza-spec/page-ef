@@ -1,142 +1,30 @@
-<script>
-    let isPlaying = false;
-    let score = 0;
-    let combo = 0;
-    let health = 50;
-    let totalNotes = 0;
-    let hitNotes = 0;
-    let activeNotes = [];
-    let audioCtx = null;
-
-    const keyMap = {
-        'ArrowLeft': 0, 'a': 0, 'A': 0,
-        'ArrowDown': 1, 's': 1, 'S': 1,
-        'ArrowUp': 2, 'w': 2, 'W': 2,
-        'ArrowRight': 3, 'd': 3, 'D': 3
-    };
-
-    const arrowIcons = ['⬅️', '⬇️', '⬆️', '➡️'];
-    const freqs = [261.63, 293.66, 329.63, 349.23]; // Notas Dó, Ré, Mi, Fá
-
-    function playSynthSound(freq) {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.3);
+function startGame() {
+    // Inicializa ou retoma o contexto de áudio no clique
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
     }
 
-    function startGame() {
-        score = 0;
-        combo = 0;
-        health = 50;
-        totalNotes = 0;
-        hitNotes = 0;
-        activeNotes = [];
-        
-        updateHUD();
-        document.getElementById('menu-screen').classList.add('hidden');
-
-        isPlaying = true;
-        spawnNotesLoop();
-        requestAnimationFrame(updateGame);
+    // Oculta a tela de menu
+    const menuScreen = document.getElementById('menu-screen');
+    if (menuScreen) {
+        menuScreen.classList.add('hidden');
     }
 
-    function spawnNotesLoop() {
-        if (!isPlaying) return;
-        const lane = Math.floor(Math.random() * 4);
-        createNote(lane, true);
-        setTimeout(spawnNotesLoop, 600);
-    }
+    // Reseta as variáveis
+    score = 0;
+    combo = 0;
+    health = 50;
+    totalNotes = 0;
+    hitNotes = 0;
+    activeNotes = [];
+    
+    updateHUD();
 
-    function createNote(lane, isPlayer) {
-        const container = document.getElementById('player-lanes');
-        const targetLane = container.children[lane];
-        
-        const noteEl = document.createElement('div');
-        noteEl.className = 'absolute text-2xl';
-        noteEl.innerText = arrowIcons[lane];
-        noteEl.style.top = '0px';
-
-        targetLane.appendChild(noteEl);
-
-        activeNotes.push({
-            element: noteEl,
-            lane: lane,
-            posY: 0,
-            speed: 3
-        });
-    }
-
-    function updateGame() {
-        if (!isPlaying) return;
-
-        for (let i = activeNotes.length - 1; i >= 0; i--) {
-            const note = activeNotes[i];
-            note.posY += note.speed;
-            note.element.style.top = `${note.posY}px`;
-
-            if (note.posY > 140) {
-                handleMiss();
-                note.element.remove();
-                activeNotes.splice(i, 1);
-            }
-        }
-
-        requestAnimationFrame(updateGame);
-    }
-
-    function handleMiss() {
-        combo = 0;
-        health = Math.max(0, health - 8);
-        totalNotes++;
-        updateHUD();
-    }
-
-    function triggerHit(lane) {
-        const hitIndex = activeNotes.findIndex(n => n.lane === lane && n.posY >= 90 && n.posY <= 150);
-
-        if (hitIndex !== -1) {
-            playSynthSound(freqs[lane]);
-            score += 100;
-            combo++;
-            hitNotes++;
-            totalNotes++;
-            health = Math.min(100, health + 4);
-
-            activeNotes[hitIndex].element.remove();
-            activeNotes.splice(hitIndex, 1);
-        } else {
-            handleMiss();
-        }
-
-        updateHUD();
-    }
-
-    function updateHUD() {
-        document.getElementById('score-display').innerText = score;
-        document.getElementById('combo-display').innerText = combo;
-        document.getElementById('health-bar').style.width = `${health}%`;
-
-        const accuracy = totalNotes > 0 ? Math.round((hitNotes / totalNotes) * 100) : 100;
-        document.getElementById('accuracy-display').innerText = `${accuracy}%`;
-    }
-
-    window.addEventListener('keydown', (e) => {
-        if (!isPlaying) return;
-        if (keyMap.hasOwnProperty(e.key)) {
-            triggerHit(keyMap[e.key]);
-        }
-    });
-</script>
+    // Inicia o jogo
+    isPlaying = true;
+    spawnNotesLoop();
+    requestAnimationFrame(updateGame);
+}
